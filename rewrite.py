@@ -1,0 +1,485 @@
+﻿import os
+
+content = '''package com.KotEdit.mobiletexteditor.ui
+
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.nio.charset.Charset
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainScreen(viewModel: EditorViewModel = viewModel()) {
+    val context = LocalContext.current
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    
+    // Collect states from ViewModel
+    val currentFileName by viewModel.currentFileName.collectAsState()
+    val textValue by viewModel.textValue.collectAsState()
+    val recentFiles by viewModel.recentFiles.collectAsState()
+    val isSearchVisible by viewModel.isSearchVisible.collectAsState()
+    val isReadOnly by viewModel.isReadOnly.collectAsState()
+    val isWordWrapEnabled by viewModel.isWordWrapEnabled.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val replaceQuery by viewModel.replaceQuery.collectAsState()
+    val fileVersions by viewModel.fileVersions.collectAsState()
+    
+    val cursorLine by viewModel.cursorLine.collectAsState()
+    val cursorColumn by viewModel.cursorColumn.collectAsState()
+
+    // UI States
+    var showMenu by remember { mutableStateOf(false) }
+    var showSaveAsDialog by remember { mutableStateOf(false) }
+    var showHistoryDialog by remember { mutableStateOf(false) }
+    var saveAsFileName by remember { mutableStateOf("") }
+    
+    // Encoding selection state
+    val charsetOptions = listOf(Charsets.UTF_8, Charsets.US_ASCII, Charsets.ISO_8859_1, Charsets.UTF_16)
+    var selectedCharset by remember { mutableStateOf(Charsets.UTF_8) }
+    var expandedCharsetMenu by remember { mutableStateOf(false) }
+    
+    val dateFormatter = remember { SimpleDateFormat("MMM dd, yyyy HH:mm:ss", Locale.getDefault()) }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadRecentFiles(context)
+        viewModel.checkCache(context)
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(10000L) // Wait 10 seconds
+            viewModel.saveToCache(context)
+        }
+    }
+
+    if (showSaveAsDialog) {
+        AlertDialog(
+            onDismissRequest = { showSaveAsDialog = false },
+            title = { Text("Save As") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = saveAsFileName,
+                        onValueChange = { saveAsFileName = it },
+                        label = { Text("File Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    ExposedDropdownMenuBox(
+                        expanded = expandedCharsetMenu,
+                        onExpandedChange = { expandedCharsetMenu = !expandedCharsetMenu }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedCharset.name(),
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Encoding") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCharsetMenu) },
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                            modifier = Modifier.menuAnchor()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expandedCharsetMenu,
+                            onDismissRequest = { expandedCharsetMenu = false }
+                        ) {
+                            charsetOptions.forEach { charset ->
+                                DropdownMenuItem(
+                                    text = { Text(charset.name()) },
+                                    onClick = {
+                                        selectedCharset = charset
+                                        expandedCharsetMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (saveAsFileName.isNotBlank()) {
+                        val finalName = if (!saveAsFileName.endsWith(".txt") && !saveAsFileName.endsWith(".md") && !saveAsFileName.endsWith(".kt")) ".txt" else saveAsFileName
+                        viewModel.saveFile(context, finalName, selectedCharset)
+                        showSaveAsDialog = false
+                    }
+                }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSaveAsDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showHistoryDialog) {
+        AlertDialog(
+            onDismissRequest = { showHistoryDialog = false },
+            title = { Text("Version History") },
+            text = {
+                var expandedVersion by remember { mutableStateOf<Int?>(null) }
+                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                    items(fileVersions) { version ->
+                        val isExpanded = expandedVersion == version.versionNumber
+                        ElevatedCard(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { expandedVersion = if (isExpanded) null else version.versionNumber }
+                                    .padding(16.dp)
+                            ) {
+                                Text(
+                                    text = "Version \", 
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = dateFormatter.format(Date(version.timestamp)),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                
+                                AnimatedVisibility(visible = isExpanded) {
+                                    Column(modifier = Modifier.padding(top = 8.dp)) {
+                                        HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
+                                        val scrollState = rememberScrollState()
+                                        Text(
+                                            text = if (version.versionNumber == 1) "Initial Commit (Full text)" else version.patchData.ifEmpty { "No Changes" },
+                                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+                                            modifier = Modifier.fillMaxWidth().heightIn(max = 200.dp).verticalScroll(scrollState),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+                                
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Button(
+                                    onClick = {
+                                        viewModel.restoreVersion(context, version.versionNumber)
+                                        showHistoryDialog = false
+                                    },
+                                    modifier = Modifier.align(Alignment.End),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text("Restore this version")
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showHistoryDialog = false }) { Text("Close") }
+            }
+        )
+    }
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.surfaceContainer) {
+                Column(modifier = Modifier.fillMaxHeight().padding(16.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "CodeCanvas IDE", 
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Black
+                        )
+                    }
+                    
+                    Surface(
+                        onClick = { scope.launch { drawerState.close() } },
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = RoundedCornerShape(32.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                            Text("Editor", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text("RECENT FILES", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        items(recentFiles) { fileName ->
+                            Surface(
+                                onClick = {
+                                    viewModel.openFile(context, fileName)
+                                    scope.launch { drawerState.close() }
+                                },
+                                color = Color.Transparent,
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                            ) {
+                                Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Icon(Icons.Default.Menu, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                                    Text(fileName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                Column {
+                    TopAppBar(
+                        title = { 
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "CodeCanvas", 
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(" / ", color = MaterialTheme.colorScheme.outlineVariant)
+                                Text(
+                                    currentFileName.ifBlank { "Untitled" },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                Icon(Icons.Default.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.primary)
+                            }
+                        },
+                        actions = {
+                            IconButton(onClick = { /* Placeholder for run */ }) {
+                                Icon(Icons.Default.PlayArrow, contentDescription = "Run", tint = MaterialTheme.colorScheme.primary)
+                            }
+                            Box {
+                                IconButton(onClick = { showMenu = true }) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = "More", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                DropdownMenu(
+                                    expanded = showMenu,
+                                    onDismissRequest = { showMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Save") },
+                                        onClick = {
+                                            viewModel.saveFile(context)
+                                            showMenu = false
+                                        },
+                                        leadingIcon = { Icon(Icons.Default.Save, "Save") }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Save As...") },
+                                        onClick = {
+                                            saveAsFileName = currentFileName
+                                            showSaveAsDialog = true
+                                            showMenu = false
+                                        }
+                                    )
+                                    HorizontalDivider()
+                                    DropdownMenuItem(
+                                        text = { Text("Word Wrap") },
+                                        onClick = { viewModel.toggleWordWrap() },
+                                        trailingIcon = { Checkbox(checked = isWordWrapEnabled, onCheckedChange = null) }
+                                    )
+                                    val isDarkMode by viewModel.isDarkMode.collectAsState()
+                                    DropdownMenuItem(
+                                        text = { Text("Dark Mode") },
+                                        onClick = { viewModel.toggleDarkMode() },
+                                        trailingIcon = { Checkbox(checked = isDarkMode, onCheckedChange = null) }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Format Code") },
+                                        onClick = { viewModel.formatCode(); showMenu = false }
+                                    )
+                                }
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+                    )
+                }
+            },
+            bottomBar = {
+                Column {
+                    // Status Bar
+                    Row(
+                        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerLow).padding(horizontal = 16.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(Icons.Default.CloudDone, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.secondary)
+                                Text("Saved", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                            }
+                            Text("UTF-8", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            Text("Ln \, Col \", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                            Text("CRASH_PREVENTION: READY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                        }
+                    }
+                    
+                    // Accessory Bar
+                    Row(
+                        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(8.dp).horizontalScroll(rememberScrollState()),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val snippets = listOf("{", "}", "[", "]", "->", "val", "fun")
+                        snippets.forEach { snippet ->
+                            Surface(
+                                onClick = { viewModel.injectSnippet(snippet) },
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(snippet, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        Surface(
+                            onClick = { showHistoryDialog = true; viewModel.loadVersions(context) },
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+                            shape = RoundedCornerShape(16.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha=0.2f))
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+                                Icon(Icons.Default.History, contentDescription = "History", modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.secondary)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("History", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                            }
+                        }
+                    }
+                    
+                    // Bottom Navigation Bar
+                    Row(
+                        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(bottom = 16.dp, top = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Editor", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha=0.3f), RoundedCornerShape(24.dp)).padding(12.dp))
+                        Icon(Icons.Default.List, contentDescription = "Diff", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(12.dp))
+                        Icon(Icons.Default.Menu, contentDescription = "Grid", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(12.dp))
+                        Icon(Icons.Default.Lock, contentDescription = "Visibility", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(12.dp))
+                    }
+                }
+            }
+        ) { paddingValues ->
+            val verticalScrollState = rememberScrollState()
+            
+            Crossfade(
+                targetState = currentFileName,
+                modifier = Modifier.padding(paddingValues).fillMaxSize(),
+                label = "FileTransition"
+            ) { _ ->
+                Row(
+                    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).verticalScroll(verticalScrollState)
+                ) {
+                    // Line Numbers Gutter
+                    Column(
+                        modifier = Modifier
+                            .width(48.dp)
+                            .fillMaxHeight()
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                            .padding(top = 16.dp, end = 12.dp),
+                        horizontalAlignment = Alignment.End
+                    ) {
+                        val lineCount = maxOf(1, textValue.text.count { it == '\\n' } + 1)
+                        for (i in 1..lineCount) {
+                            Text(
+                                text = i.toString(),
+                                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 24.sp),
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                                modifier = Modifier.height(24.dp)
+                            )
+                        }
+                    }
+                    
+                    // Code Editor
+                    TextField(
+                        value = textValue,
+                        onValueChange = { viewModel.onTextChange(it) },
+                        readOnly = isReadOnly,
+                        modifier = Modifier
+                            .weight(1f)
+                            .then(if (!isWordWrapEnabled) Modifier.horizontalScroll(rememberScrollState()) else Modifier),
+                        placeholder = { Text("Start typing...") },
+                        visualTransformation = SyntaxTransformation(fileName = currentFileName, searchQuery = searchQuery),
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(lineHeight = 24.sp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            disabledContainerColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+'''
+
+with open('app/src/main/java/com/KotEdit/mobiletexteditor/ui/MainScreen.kt', 'w', encoding='utf-8') as f:
+    f.write(content)
+
+print("MainScreen updated!")
