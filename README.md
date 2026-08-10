@@ -46,5 +46,6 @@ To run CodeCanvas locally on your machine:
 ## 🤝 The Team
 Developed collaboratively by:
 - **Thathsara Adikari**
+- **Ashini Sanjana**
 - **Sithmini**
-- **Ashi**
+
