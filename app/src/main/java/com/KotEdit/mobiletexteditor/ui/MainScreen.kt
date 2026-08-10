@@ -164,6 +164,46 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
         )
     }
 
+    if (showSearchDialog) {
+        var localSearchQuery by remember { mutableStateOf(searchQuery) }
+        var localReplaceQuery by remember { mutableStateOf(replaceQuery) }
+        
+        AlertDialog(
+            onDismissRequest = { showSearchDialog = false },
+            title = { Text("Search & Replace") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = localSearchQuery,
+                        onValueChange = { localSearchQuery = it },
+                        label = { Text("Search") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = localReplaceQuery,
+                        onValueChange = { localReplaceQuery = it },
+                        label = { Text("Replace With") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.onSearchQueryChange(localSearchQuery)
+                    viewModel.onReplaceQueryChange(localReplaceQuery)
+                    viewModel.replaceAll()
+                    showSearchDialog = false
+                }) { Text("Replace All") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    viewModel.onSearchQueryChange(localSearchQuery)
+                    showSearchDialog = false 
+                }) { Text("Search Only") }
+            }
+        )
+    }
+
     if (showHistoryDialog) {
         AlertDialog(
             onDismissRequest = { showHistoryDialog = false },
