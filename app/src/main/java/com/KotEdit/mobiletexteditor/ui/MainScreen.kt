@@ -39,9 +39,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
@@ -57,7 +57,7 @@ import java.util.Date
 import java.util.Locale
 import java.nio.charset.Charset
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun MainScreen(viewModel: EditorViewModel = viewModel()) {
     val context = LocalContext.current
@@ -84,6 +84,7 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
     var showSaveAsDialog by remember { mutableStateOf(false) }
     var showHistoryDialog by remember { mutableStateOf(false) }
     var saveAsFileName by remember { mutableStateOf("") }
+    var fileToDelete by remember { mutableStateOf<String?>(null) }
     
     // Encoding selection state
     val charsetOptions = listOf(Charsets.UTF_8, Charsets.US_ASCII, Charsets.ISO_8859_1, Charsets.UTF_16)
@@ -271,6 +272,29 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
         )
     }
 
+    if (fileToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { fileToDelete = null },
+            title = { Text("Delete File") },
+            text = { Text("Are you sure you want to delete '$fileToDelete'?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteFile(context, fileToDelete!!)
+                        fileToDelete = null
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { fileToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -303,19 +327,26 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
                     
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(recentFiles) { fileName ->
-                            Surface(
-                                onClick = {
-                                    viewModel.openFile(context, fileName)
-                                    scope.launch { drawerState.close() }
-                                },
-                                color = Color.Transparent,
-                                shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .combinedClickable(
+                                        onClick = {
+                                            viewModel.openFile(context, fileName)
+                                            scope.launch { drawerState.close() }
+                                        },
+                                        onLongClick = {
+                                            fileToDelete = fileName
+                                        }
+                                    )
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically, 
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Icon(Icons.Default.Menu, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-                                    Text(fileName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
+                                Icon(Icons.Default.List, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(fileName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                             }
                         }
                     }

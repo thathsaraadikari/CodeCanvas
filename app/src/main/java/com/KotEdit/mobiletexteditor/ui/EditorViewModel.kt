@@ -91,6 +91,9 @@ class EditorViewModel : ViewModel() {
     }
 
     fun onTextChange(newValue: TextFieldValue) {
+        if (_searchQuery.value.isNotEmpty()) {
+            _searchQuery.value = ""
+        }
         if (!isUndoRedoAction && newValue.text != _textValue.value.text) {
             // Save current state to undo stack before changing
             undoStack.add(_textValue.value)
@@ -102,6 +105,17 @@ class EditorViewModel : ViewModel() {
         _textValue.value = newValue
         isUndoRedoAction = false
         updateCursorPosition(newValue)
+    }
+
+    fun deleteFile(context: Context, fileName: String) {
+        viewModelScope.launch {
+            File(context.filesDir, fileName).delete()
+            if (_currentFileName.value == fileName) {
+                newFile()
+            }
+            loadRecentFiles(context)
+            Toast.makeText(context, "File deleted", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun updateCursorPosition(value: TextFieldValue) {
