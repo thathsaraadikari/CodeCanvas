@@ -304,7 +304,7 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
                             }) {
                                 Icon(Icons.Default.Add, contentDescription = "New", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            IconButton(onClick = { viewModel.toggleReadOnly() }) {
+                            IconButton(onClick = { viewModel.toggleReadOnly(context) }) {
                                 Icon(if (isReadOnly) Icons.Default.Lock else Icons.Default.Edit, contentDescription = "Toggle Read Only", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Box {
