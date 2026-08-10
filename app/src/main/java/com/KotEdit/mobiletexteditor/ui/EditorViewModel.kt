@@ -1,4 +1,4 @@
-﻿package com.KotEdit.mobiletexteditor.ui
+package com.KotEdit.mobiletexteditor.ui
 
 import android.content.Context
 import androidx.compose.ui.text.input.TextFieldValue
@@ -134,7 +134,11 @@ class EditorViewModel : ViewModel() {
 
     fun loadRecentFiles(context: Context) {
         viewModelScope.launch {
-            val files = context.filesDir.listFiles()?.map { it.name } ?: emptyList()
+            val files = context.filesDir.listFiles()?.filter { file ->
+                !file.name.startsWith("profileinstaller") && 
+                !file.name.startsWith(".crash_recovery") &&
+                file.name != "profileinstalled"
+            }?.map { it.name } ?: emptyList()
             _recentFiles.value = files
         }
     }
