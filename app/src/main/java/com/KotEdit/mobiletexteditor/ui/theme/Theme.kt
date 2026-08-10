@@ -12,31 +12,28 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 
-private val VellumColorScheme = darkColorScheme(
-    primary = VellumPrimary,
-    onPrimary = VellumOnPrimary,
-    primaryContainer = VellumPrimaryContainer,
-    onPrimaryContainer = VellumOnPrimaryContainer,
-    secondary = VellumSecondary,
-    onSecondary = VellumOnSecondary,
-    secondaryContainer = VellumSecondaryContainer,
-    onSecondaryContainer = VellumOnSecondaryContainer,
-    tertiary = VellumTertiary,
-    onTertiary = VellumOnTertiary,
-    tertiaryContainer = VellumTertiaryContainer,
-    onTertiaryContainer = VellumOnTertiaryContainer,
-    error = VellumError,
-    onError = VellumOnError,
-    errorContainer = VellumErrorContainer,
-    onErrorContainer = VellumOnErrorContainer,
-    background = VellumBackground,
-    onBackground = VellumOnBackground,
-    surface = VellumSurface,
-    onSurface = VellumOnSurface,
-    surfaceVariant = VellumSurfaceVariant,
-    onSurfaceVariant = VellumOnSurfaceVariant,
-    outline = VellumOutline,
-    outlineVariant = VellumOutlineVariant
+private val DarkColorScheme = darkColorScheme(
+    primary = ElectricCyan,
+    secondary = CyanVariant,
+    tertiary = CyanVariant,
+    background = ObsidianBackground,
+    surface = ObsidianSurface,
+    surfaceVariant = ObsidianSurface,
+    onPrimary = Color.Black,
+    onBackground = Color.White,
+    onSurface = Color.White
+)
+
+private val LightColorScheme = lightColorScheme(
+    primary = DeepNavy,
+    secondary = NavyVariant,
+    tertiary = NavyVariant,
+    background = FrostBackground,
+    surface = PureWhite,
+    surfaceVariant = PureWhite,
+    onPrimary = Color.White,
+    onBackground = Color.Black,
+    onSurface = Color.Black
 )
 
 @Composable
@@ -50,7 +47,8 @@ fun MobileTextEditorTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        else -> VellumColorScheme
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
     }
 
     MaterialTheme(

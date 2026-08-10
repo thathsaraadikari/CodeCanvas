@@ -1,4 +1,4 @@
-package com.KotEdit.mobiletexteditor.ui
+﻿package com.KotEdit.mobiletexteditor.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -173,7 +173,7 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
                         ElevatedCard(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
                             shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+                            colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                         ) {
                             Column(
                                 modifier = Modifier
@@ -231,7 +231,7 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.surfaceContainer) {
+            ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.surface) {
                 Column(modifier = Modifier.fillMaxHeight().padding(16.dp)) {
                     Row(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -352,7 +352,7 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
                                 }
                             }
                         },
-                        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     )
                 }
             },
@@ -360,7 +360,7 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
                 Column {
                     // Status Bar
                     Row(
-                        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerLow).padding(horizontal = 16.dp, vertical = 6.dp),
+                        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 16.dp, vertical = 6.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -375,49 +375,6 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
                             Text("Ln ${cursorLine}, Col ${cursorColumn}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                             Text("CRASH_PREVENTION: READY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                         }
-                    }
-                    
-                    // Accessory Bar
-                    Row(
-                        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(8.dp).horizontalScroll(rememberScrollState()),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        val snippets = listOf("{", "}", "[", "]", "->", "val", "fun")
-                        snippets.forEach { snippet ->
-                            Surface(
-                                onClick = { viewModel.injectSnippet(snippet) },
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                shape = RoundedCornerShape(4.dp)
-                            ) {
-                                Text(snippet, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                        Spacer(modifier = Modifier.weight(1f))
-                        Surface(
-                            onClick = { showHistoryDialog = true; viewModel.loadVersions(context) },
-                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
-                            shape = RoundedCornerShape(16.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha=0.2f))
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
-                                Icon(Icons.Default.History, contentDescription = "History", modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.secondary)
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("History", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
-                            }
-                        }
-                    }
-                    
-                    // Bottom Navigation Bar
-                    Row(
-                        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(bottom = 16.dp, top = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Edit, contentDescription = "Editor", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha=0.3f), RoundedCornerShape(24.dp)).padding(12.dp))
-                        Icon(Icons.Default.List, contentDescription = "Diff", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(12.dp))
-                        Icon(Icons.Default.Menu, contentDescription = "Grid", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(12.dp))
-                        Icon(Icons.Default.Lock, contentDescription = "Visibility", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(12.dp))
                     }
                 }
             }
@@ -437,7 +394,7 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
                         modifier = Modifier
                             .width(48.dp)
                             .fillMaxHeight()
-                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
                             .padding(top = 16.dp, end = 12.dp),
                         horizontalAlignment = Alignment.End
                     ) {
@@ -476,3 +433,4 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
         }
     }
 }
+

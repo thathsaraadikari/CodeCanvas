@@ -1,4 +1,4 @@
-package com.KotEdit.mobiletexteditor.ui
+﻿package com.KotEdit.mobiletexteditor.ui
 
 import android.content.Context
 import androidx.compose.ui.text.input.TextFieldValue
@@ -114,21 +114,6 @@ class EditorViewModel : ViewModel() {
         
         _cursorLine.value = line
         _cursorColumn.value = col
-    }
-
-    fun injectSnippet(snippet: String) {
-        val currentValue = _textValue.value
-        val cursorOffset = currentValue.selection.start
-        if (cursorOffset < 0) return
-        
-        val newText = currentValue.text.substring(0, cursorOffset) + snippet + currentValue.text.substring(currentValue.selection.end)
-        val newCursorPos = cursorOffset + snippet.length
-        
-        undoStack.add(currentValue)
-        val newValue = TextFieldValue(newText, TextRange(newCursorPos))
-        _textValue.value = newValue
-        redoStack.clear()
-        updateCursorPosition(newValue)
     }
 
     fun undo() {
@@ -288,3 +273,4 @@ class EditorViewModel : ViewModel() {
         }
     }
 }
+
