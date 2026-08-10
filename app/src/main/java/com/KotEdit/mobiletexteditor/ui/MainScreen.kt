@@ -1,4 +1,4 @@
-﻿package com.KotEdit.mobiletexteditor.ui
+package com.KotEdit.mobiletexteditor.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -33,6 +33,8 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material.icons.filled.Redo
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -72,6 +74,7 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
     val searchQuery by viewModel.searchQuery.collectAsState()
     val replaceQuery by viewModel.replaceQuery.collectAsState()
     val fileVersions by viewModel.fileVersions.collectAsState()
+    var showSearchDialog by remember { mutableStateOf(false) }
     
     val cursorLine by viewModel.cursorLine.collectAsState()
     val cursorColumn by viewModel.cursorColumn.collectAsState()
@@ -285,29 +288,24 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
                 Column {
                     TopAppBar(
                         title = { 
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    "CodeCanvas", 
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(" / ", color = MaterialTheme.colorScheme.outlineVariant)
-                                Text(
-                                    currentFileName.ifBlank { "Untitled" },
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
+                            Column {
+                                Text(currentFileName.ifBlank { "Untitled" }, style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                                Text("/storage/internal/${currentFileName.ifBlank { "Untitled" }}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         },
                         navigationIcon = {
                             IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                Icon(Icons.Default.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Default.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.onSurface)
                             }
                         },
                         actions = {
-                            IconButton(onClick = { /* Placeholder for run */ }) {
-                                Icon(Icons.Default.PlayArrow, contentDescription = "Run", tint = MaterialTheme.colorScheme.primary)
+                            IconButton(onClick = { 
+                                viewModel.onTextChange(androidx.compose.ui.text.input.TextFieldValue(""))
+                            }) {
+                                Icon(Icons.Default.Add, contentDescription = "New", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            IconButton(onClick = { viewModel.toggleReadOnly() }) {
+                                Icon(if (isReadOnly) Icons.Default.Lock else Icons.Default.Edit, contentDescription = "Toggle Read Only", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Box {
                                 IconButton(onClick = { showMenu = true }) {
@@ -335,6 +333,22 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
                                     )
                                     HorizontalDivider()
                                     DropdownMenuItem(
+                                        text = { Text("Undo") },
+                                        onClick = { viewModel.undo(); showMenu = false },
+                                        leadingIcon = { Icon(Icons.Default.Undo, "Undo") }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Redo") },
+                                        onClick = { viewModel.redo(); showMenu = false },
+                                        leadingIcon = { Icon(Icons.Default.Redo, "Redo") }
+                                    )
+                                    HorizontalDivider()
+                                    DropdownMenuItem(
+                                        text = { Text("Search & Replace") },
+                                        onClick = { showSearchDialog = true; showMenu = false },
+                                        leadingIcon = { Icon(Icons.Default.Search, "Search") }
+                                    )
+                                    DropdownMenuItem(
                                         text = { Text("Word Wrap") },
                                         onClick = { viewModel.toggleWordWrap() },
                                         trailingIcon = { Checkbox(checked = isWordWrapEnabled, onCheckedChange = null) }
@@ -352,30 +366,11 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
                                 }
                             }
                         },
-                        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            titleContentColor = MaterialTheme.colorScheme.onSurface
+                        )
                     )
-                }
-            },
-            bottomBar = {
-                Column {
-                    // Status Bar
-                    Row(
-                        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 16.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Icon(Icons.Default.Done, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.secondary)
-                                Text("Saved", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                            }
-                            Text("UTF-8", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Text("Ln ${cursorLine}, Col ${cursorColumn}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                            Text("CRASH_PREVENTION: READY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-                        }
-                    }
                 }
             }
         ) { paddingValues ->
@@ -394,8 +389,8 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
                         modifier = Modifier
                             .width(48.dp)
                             .fillMaxHeight()
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .padding(top = 16.dp, end = 12.dp),
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.5f))
+                            .padding(top = 16.dp, end = 8.dp),
                         horizontalAlignment = Alignment.End
                     ) {
                         val lineCount = maxOf(1, textValue.text.count { it == '\n' } + 1)
@@ -403,31 +398,38 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
                             Text(
                                 text = i.toString(),
                                 style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 24.sp),
-                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                                color = MaterialTheme.colorScheme.outline,
                                 modifier = Modifier.height(24.dp)
                             )
                         }
                     }
                     
+                    VerticalDivider(modifier = Modifier.fillMaxHeight(), color = MaterialTheme.colorScheme.outlineVariant)
+                    
                     // Code Editor
-                    TextField(
-                        value = textValue,
-                        onValueChange = { viewModel.onTextChange(it) },
-                        readOnly = isReadOnly,
-                        modifier = Modifier
-                            .weight(1f)
-                            .then(if (!isWordWrapEnabled) Modifier.horizontalScroll(rememberScrollState()) else Modifier),
-                        placeholder = { Text("Start typing...") },
-                        visualTransformation = SyntaxTransformation(fileName = currentFileName, searchQuery = searchQuery),
-                        textStyle = MaterialTheme.typography.bodyMedium.copy(lineHeight = 24.sp),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            disabledContainerColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
+                    val isDarkMode by viewModel.isDarkMode.collectAsState()
+                    val cursorLineOffset = cursorLine - 1
+                    
+                    Box(modifier = Modifier.weight(1f)) {
+                        TextField(
+                            value = textValue,
+                            onValueChange = { viewModel.onTextChange(it) },
+                            readOnly = isReadOnly,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .then(if (!isWordWrapEnabled) Modifier.horizontalScroll(rememberScrollState()) else Modifier),
+                            placeholder = { Text("Start typing...") },
+                            visualTransformation = SyntaxTransformation(fileName = currentFileName, searchQuery = searchQuery),
+                            textStyle = MaterialTheme.typography.bodyMedium.copy(lineHeight = 24.sp),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            )
                         )
-                    )
+                    }
                 }
             }
         }
