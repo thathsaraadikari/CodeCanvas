@@ -67,6 +67,12 @@ class SyntaxTransformation(
         commentRegex.findAll(text).forEach { match ->
             builder.addStyle(SpanStyle(color = commentColor, fontStyle = FontStyle.Italic), match.range.first, match.range.last + 1)
         }
+
+        // 4. Highlight Annotations (@Annotation)
+        val annotationRegex = "@[A-Za-z]+".toRegex()
+        annotationRegex.findAll(text).forEach { match ->
+            builder.addStyle(SpanStyle(color = Color(0xFFD4A853)), match.range.first, match.range.last + 1) // Yellow/Gold for annotations
+        }
     }
 
     private fun applyMarkdownSyntax(builder: AnnotatedString.Builder, text: String) {
