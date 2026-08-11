@@ -1,51 +1,96 @@
 # 📱 CodeCanvas
 
-CodeCanvas is a fast, highly-capable, native Android text editor built specifically for coding on mobile devices. Developed from the ground up using **Kotlin** and **Jetpack Compose**, CodeCanvas provides a clean, classic text-editor experience while packing advanced under-the-hood features like delta-based version control and real-time syntax highlighting.
+CodeCanvas is a fast, lightweight, native Android text editor built specifically for developers and technical writers. Developed from the ground up using **Kotlin** and **Jetpack Compose**, it delivers a clean, classic IDE experience on mobile while packing advanced features like delta-based version control, real-time syntax highlighting, and invisible crash recovery.
 
-Developed as the mini-project for **IS2205 Mobile Application Design & Development**.
+Developed as the mini-project for **IS2205 — Mobile Application Design & Development**.
 
 ---
 
-## ✨ Key Features
+## ✨ Features
 
-- **Classic Editor Interface:** A minimalist, distraction-free environment complete with a dedicated line-number gutter, classic Top App Bar, and easy-to-use drawer navigation.
-- **Delta-Based Version Control:** Say goodbye to massive file sizes. CodeCanvas tracks your edit history using an intelligent `java-diff-utils` engine that calculates the exact lines changed and saves them as tiny "patches" in a local SQLite Room database, allowing you to rollback to previous versions instantly.
-- **Real-Time Syntax Highlighting:** Employs a highly efficient Regex-based text transformer to actively scan and colorize your Kotlin and Markdown syntax as you type without dropping frames.
-- **Background Crash Prevention:** Automatically saves your active editor state to a hidden `.crash_recovery.tmp` cache file every 10 seconds. If your app closes unexpectedly, your unsaved work is instantly restored upon relaunch.
-- **Advanced Editing Tools:** Features full Undo/Redo stacks, Search & Replace, Word Wrap toggles, and Read-Only lock modes to protect your code.
-- **Dynamic Theming:** Seamlessly integrates with Android's system-wide Dark/Light modes for optimal viewing in any environment.
+### Editor Engine
+- **File Management:** Create new files, save, and Save As with encoding selection (UTF-8, ASCII, ISO-8859-1, UTF-16).
+- **Sidebar Navigation:** A slide-out drawer listing all recent files. Tap to open, long-press to delete.
+- **Undo / Redo:** A dual-stack memory system tracking up to 50 granular edits per session.
+- **Search & Replace:** Dialog-based search with real-time yellow highlighting. Highlights auto-clear when you tap back into the editor.
+- **Word Wrap Toggle:** Enable or disable horizontal scrolling for long lines.
+- **Code Formatting:** One-tap auto-indentation engine for Kotlin code.
+- **Read-Only Lock:** Lock any file to prevent accidental edits. Persisted in the database.
 
-## 🛠️ Architecture & Tech Stack
+### Syntax Highlighting
+- **Kotlin:** Keywords, strings, single-line comments, and annotations (`@Composable`, etc.) are dynamically colored via a Regex-based `VisualTransformation` engine.
+- **Markdown:** Headers (`#`), bold (`**text**`), italic (`*text*`), and inline code (`` `code` ``) are styled in real-time with theme-adaptive colors for both dark and light modes.
 
-CodeCanvas is engineered following modern Android best practices:
+### Delta-Based Version Control
+- **Incremental Versioning:** The first save stores the full file. Every subsequent save calculates only the changed lines (delta patch) using `java-diff-utils` and stores the lightweight patch string — never duplicating the full file.
+- **Version History:** View all saved snapshots with timestamps. Expand any version to inspect the raw diff patch.
+- **Rollback:** Instantly restore any previous version. The engine reconstructs the file by sequentially applying patches from the base version.
+- **Room Database:** All version metadata and patches are persisted locally via SQLite (Room Persistence Library).
 
-- **Language**: [Kotlin](https://kotlinlang.org/)
-- **UI Toolkit**: [Jetpack Compose](https://developer.android.com/jetpack/compose) for a fully declarative, functional UI.
-- **Architecture**: **MVVM (Model-View-ViewModel)**. The app cleanly separates UI logic (`MainScreen.kt`), State/Business logic (`EditorViewModel.kt`), and Data persistence (`VersionControlRepository.kt`).
-- **Database**: Room (SQLite) for managing delta-patch version tracking.
-- **State Management**: Kotlin `StateFlow` and Coroutines for asynchronous background tasks.
+### Fault Tolerance
+- **Crash Prevention:** A background Kotlin Coroutine silently caches the active editor buffer to a hidden `.crash_recovery_cache.txt` file every 10 seconds.
+- **Auto-Recovery:** On app relaunch, if unsaved cached data is detected, it is automatically loaded into the editor as `Recovered_File.txt`.
+
+### Theming
+- **Dark / Light Mode:** Toggle between a premium Obsidian dark theme and a clean Frost light theme, both with carefully curated color palettes.
+
+---
+
+## 🛠️ Architecture
+
+CodeCanvas follows the **MVVM (Model-View-ViewModel)** architecture:
+
+```
+┌─────────────────────────────────────────────────┐
+│  VIEW (UI Layer)                                │
+│  MainScreen.kt — Jetpack Compose UI             │
+│  SyntaxHighlighter.kt — VisualTransformation    │
+├─────────────────────────────────────────────────┤
+│  VIEWMODEL (Logic Layer)                        │
+│  EditorViewModel.kt — State, Undo/Redo, I/O    │
+├─────────────────────────────────────────────────┤
+│  MODEL (Data Layer)                             │
+│  VersionControlRepository.kt — Delta engine     │
+│  AppDatabase.kt / FileVersionDao.kt — Room DB   │
+└─────────────────────────────────────────────────┘
+```
+
+### Tech Stack
+| Component | Technology |
+|:---|:---|
+| Language | Kotlin |
+| UI Toolkit | Jetpack Compose (Material 3) |
+| Architecture | MVVM with StateFlow |
+| Database | Room (SQLite) |
+| Diff Engine | java-diff-utils |
+| Build System | Gradle with KSP |
+
+---
 
 ## 🚀 Getting Started
 
-To run CodeCanvas locally on your machine:
-
 ### Prerequisites
-- [Android Studio](https://developer.android.com/studio) (Latest version recommended)
-- Android SDK (API 34+)
+- [Android Studio](https://developer.android.com/studio) (Latest version)
+- Android SDK (API 26+, target API 37)
 
-### Installation
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/thathsaraadikari/CodeCanvas.git
-   ```
-2. Open the project folder in Android Studio.
-3. Allow Gradle to sync and download all necessary dependencies.
-4. Connect an Android physical device via USB/Wi-Fi or start an Android Emulator.
-5. Click **Run** (`Shift + F10`) to compile and deploy the app!
+### Build & Run
+```bash
+git clone https://github.com/thathsaraadikari/CodeCanvas.git
+```
+1. Open the project folder in Android Studio.
+2. Let Gradle sync and download dependencies.
+3. Connect a physical Android device or start an emulator.
+4. Click **Run** (`Shift + F10`).
+
+### Generate Signed APK
+1. In Android Studio: **Build** → **Generate Signed Bundle / APK** → **APK**
+2. Create or select a keystore, choose the **release** variant.
+3. The signed APK will be at `app/release/app-release.apk`.
+
+---
 
 ## 🤝 The Team
 Developed collaboratively by:
 - **Thathsara Adikari**
-- **Ashini Sanjana**
 - **Sithmini**
-
+- **Ashi**
