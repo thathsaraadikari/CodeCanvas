@@ -55,7 +55,7 @@ CodeCanvas follows the **MVVM (Model-View-ViewModel)** architecture:
 └─────────────────────────────────────────────────┘
 ```
 
-### Tech Stack
+### Technology Stack
 | Component | Technology |
 |:---|:---|
 | Language | Kotlin |
