@@ -37,7 +37,7 @@ class VersionControlRepository(private val context: Context) {
             val diffString = diffList.joinToString("\n")
 
             // Only save if there's an actual change
-            if (diffString.isNotEmpty()) {
+            if (patch.deltas.isNotEmpty()) {
                 val fileVersion = FileVersion(
                     fileName = fileName,
                     versionNumber = latestVersion.versionNumber + 1,
