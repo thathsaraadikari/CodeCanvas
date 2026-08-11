@@ -263,13 +263,14 @@ class EditorViewModel : ViewModel() {
         viewModelScope.launch {
             if (vcsRepo == null) vcsRepo = VersionControlRepository(context)
             val restoredText = vcsRepo?.reconstructFileAtVersion(_currentFileName.value, targetVersion) ?: return@launch
-            
+
             _textValue.value = TextFieldValue(restoredText)
             undoStack.clear()
             redoStack.clear()
-            
-            // Automatically save this restored state as the newest version
-            saveFile(context, _currentFileName.value)
+
+            // Write to disk ONLY — do NOT create a new version entry in the DB
+            vcsRepo?.restoreToFile(_currentFileName.value, restoredText)
+            Toast.makeText(context, "Restored to Version $targetVersion", Toast.LENGTH_SHORT).show()
         }
     }
 

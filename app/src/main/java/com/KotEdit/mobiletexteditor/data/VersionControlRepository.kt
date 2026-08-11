@@ -85,4 +85,9 @@ class VersionControlRepository(private val context: Context) {
     suspend fun getAllVersions(fileName: String): List<FileVersion> {
         return dao.getAllVersionsForFile(fileName)
     }
+
+    // Restore a version to disk WITHOUT creating a new version entry in the DB
+    suspend fun restoreToFile(fileName: String, text: String, charset: Charset = Charsets.UTF_8) {
+        File(context.filesDir, fileName).writeText(text, charset)
+    }
 }
