@@ -20,5 +20,5 @@ interface FileVersionDao {
     suspend fun updateReadOnlyStatus(fileName: String, isReadOnly: Boolean): Int
 
     @Query("DELETE FROM file_versions WHERE fileName = :fileName")
-    suspend fun deleteVersionsForFile(fileName: String)
+    suspend fun deleteVersionsForFile(fileName: String): Int
 }
