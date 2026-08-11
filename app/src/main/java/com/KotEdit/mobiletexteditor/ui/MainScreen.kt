@@ -406,6 +406,16 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
                                     )
                                     HorizontalDivider()
                                     DropdownMenuItem(
+                                        text = { Text("Version History") },
+                                        onClick = { 
+                                            viewModel.loadVersions(context)
+                                            showHistoryDialog = true
+                                            showMenu = false 
+                                        },
+                                        leadingIcon = { Icon(Icons.Default.History, "History") }
+                                    )
+                                    HorizontalDivider()
+                                    DropdownMenuItem(
                                         text = { Text("Undo") },
                                         onClick = { viewModel.undo(); showMenu = false },
                                         leadingIcon = { Icon(Icons.Default.Undo, "Undo") }
