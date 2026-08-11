@@ -12,7 +12,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 
 class SyntaxTransformation(
     private val fileName: String,
-    private val searchQuery: String = ""
+    private val searchQuery: String = "",
+    private val isDarkMode: Boolean = true
 ) : VisualTransformation {
 
     // Define colors for our syntax
@@ -96,8 +97,9 @@ class SyntaxTransformation(
 
         // 4. Inline Code (`code`)
         val codeRegex = "`([^`]*)`".toRegex()
+        val codeBackground = if (isDarkMode) Color(0xFF2B2B2B) else Color(0xFFE8E8E8)
         codeRegex.findAll(text).forEach { match ->
-            builder.addStyle(SpanStyle(color = mdCodeColor, background = Color(0xFF2B2B2B)), match.range.first, match.range.last + 1)
+            builder.addStyle(SpanStyle(color = if (isDarkMode) mdCodeColor else Color(0xFF476582), background = codeBackground), match.range.first, match.range.last + 1)
         }
     }
 }

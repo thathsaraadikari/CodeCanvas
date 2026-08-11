@@ -90,4 +90,8 @@ class VersionControlRepository(private val context: Context) {
     suspend fun restoreToFile(fileName: String, text: String, charset: Charset = Charsets.UTF_8) {
         File(context.filesDir, fileName).writeText(text, charset)
     }
+
+    suspend fun deleteVersions(fileName: String) {
+        dao.deleteVersionsForFile(fileName)
+    }
 }

@@ -1,14 +1,7 @@
 package com.KotEdit.mobiletexteditor.ui
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -21,20 +14,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Redo
-import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material.icons.filled.Redo
 import androidx.compose.material3.*
@@ -42,14 +30,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -373,7 +355,7 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
                         },
                         actions = {
                             IconButton(onClick = { 
-                                viewModel.onTextChange(androidx.compose.ui.text.input.TextFieldValue(""))
+                                viewModel.newFile()
                             }) {
                                 Icon(Icons.Default.Add, contentDescription = "New", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
@@ -433,13 +415,13 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
                                     )
                                     DropdownMenuItem(
                                         text = { Text("Word Wrap") },
-                                        onClick = { viewModel.toggleWordWrap() },
+                                        onClick = { viewModel.toggleWordWrap(); showMenu = false },
                                         trailingIcon = { Checkbox(checked = isWordWrapEnabled, onCheckedChange = null) }
                                     )
                                     val isDarkMode by viewModel.isDarkMode.collectAsState()
                                     DropdownMenuItem(
                                         text = { Text("Dark Mode") },
-                                        onClick = { viewModel.toggleDarkMode() },
+                                        onClick = { viewModel.toggleDarkMode(); showMenu = false },
                                         trailingIcon = { Checkbox(checked = isDarkMode, onCheckedChange = null) }
                                     )
                                     DropdownMenuItem(
@@ -502,7 +484,7 @@ fun MainScreen(viewModel: EditorViewModel = viewModel()) {
                                 .fillMaxSize()
                                 .then(if (!isWordWrapEnabled) Modifier.horizontalScroll(rememberScrollState()) else Modifier),
                             placeholder = { Text("Start typing...") },
-                            visualTransformation = SyntaxTransformation(fileName = currentFileName, searchQuery = searchQuery),
+                            visualTransformation = SyntaxTransformation(fileName = currentFileName, searchQuery = searchQuery, isDarkMode = isDarkMode),
                             textStyle = MaterialTheme.typography.bodyMedium.copy(lineHeight = 24.sp),
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.Transparent,

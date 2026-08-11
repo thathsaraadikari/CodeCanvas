@@ -109,7 +109,9 @@ class EditorViewModel : ViewModel() {
 
     fun deleteFile(context: Context, fileName: String) {
         viewModelScope.launch {
+            if (vcsRepo == null) vcsRepo = VersionControlRepository(context)
             File(context.filesDir, fileName).delete()
+            vcsRepo?.deleteVersions(fileName)
             if (_currentFileName.value == fileName) {
                 newFile()
             }
@@ -160,6 +162,7 @@ class EditorViewModel : ViewModel() {
     fun newFile() {
         _currentFileName.value = "Untitled.txt"
         _textValue.value = TextFieldValue("")
+        _isReadOnly.value = false
         undoStack.clear()
         redoStack.clear()
     }
