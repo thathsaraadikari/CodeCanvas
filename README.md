@@ -91,6 +91,6 @@ git clone https://github.com/thathsaraadikari/CodeCanvas.git
 
 ## 🤝 The Team
 Developed collaboratively by:
-- **Thathsara Adikari**
-- **Sithmini**
-- **Ashi**
+- **Dilan Thathsara Adikari**
+- **Ashini Sanjana**
+- **Sithmini Rathnayaka**
